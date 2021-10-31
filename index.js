@@ -1,7 +1,9 @@
 const express = require('express');
 const { MongoClient } = require('mongodb');
+const ObjectId = require('mongodb').ObjectId
 require('dotenv').config();
 const cors = require('cors');
+
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -20,6 +22,7 @@ async function run () {
         const database = client.db('tourist');
         const spotsCollection =database.collection('spots');
         const bookingCollection = database.collection('booking');
+        const managesCollection = database.collection('manages');
         
         // get products API
         app.get('/spots', async (req, res) => {
@@ -28,12 +31,39 @@ async function run () {
             res.send(spots);
         });
 
+        // manage API 
+        app.get('/manages', async (req, res) => {
+            const cursor = managesCollection.find({});
+            const manages = await cursor.toArray();
+            res.send(manages);
+        });
+
+        //GET manage order
+        app.get('/spots/:id', async (req, res) => {
+            const id = req.params.id;
+            console.log('getting specific service', id);
+            const query = {_id:ObjectId(id)};
+            const spots = await spotsCollection.findOne(query);
+            res.json(spots)
+        })
+
         //add booking API
         app.post('/booking', async (req, res) => {
             const booking = req.body;
-            console.log('booking', booking);
-            res.send('booking proccess');
+            console.log('hit the post api',booking);
+
+            const result = await bookingCollection.insertOne(booking);
+            console.log(result);
+            res.json(result);
+        });
+        // Delete API
+        app.delete('/manages/:id',async (req, res) => {
+            const id = req.params.id;
+            const query = {_id:ObjectId(id)};
+            const result = await  managesCollection.deleteOne(query);
+            res.json(result);
         })
+
     }
     finally{
         // await client.close()
